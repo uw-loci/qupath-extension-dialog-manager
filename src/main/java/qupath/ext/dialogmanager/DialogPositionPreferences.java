@@ -162,6 +162,10 @@ public final class DialogPositionPreferences {
      * @param state The dialog state to save
      */
     public static void save(DialogState state) {
+        if (state == null || state.windowId().isEmpty()) {
+            logger.debug("Skipping save for dialog state with empty windowId");
+            return;
+        }
         Map<String, DialogState> all = loadAll();
         all.put(state.windowId(), state);
         saveAll(all);

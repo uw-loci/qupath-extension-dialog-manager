@@ -193,8 +193,9 @@ public final class DialogPositionManager {
      * @return true if the window was found and centered
      */
     public boolean centerDialog(String windowId) {
+        if (windowId == null) return false;
         for (var entry : trackedWindows.entrySet()) {
-            if (getWindowId(entry.getKey()).equals(windowId)) {
+            if (windowId.equals(getWindowId(entry.getKey()))) {
                 Window window = entry.getKey();
                 Platform.runLater(() -> {
                     centerWindowOnScreen(window, Screen.getPrimary());
@@ -214,8 +215,9 @@ public final class DialogPositionManager {
      * @return true if the window was found and close was requested
      */
     public boolean closeDialog(String windowId) {
+        if (windowId == null) return false;
         for (var entry : trackedWindows.entrySet()) {
-            if (getWindowId(entry.getKey()).equals(windowId)) {
+            if (windowId.equals(getWindowId(entry.getKey()))) {
                 Window window = entry.getKey();
                 Platform.runLater(() -> {
                     if (window instanceof Stage stage) {
@@ -235,10 +237,11 @@ public final class DialogPositionManager {
      * @param windowId The window ID to reset
      */
     public void resetDialogPosition(String windowId) {
+        if (windowId == null) return;
         DialogPositionPreferences.remove(windowId);
 
-        // Update our state list
-        dialogStates.removeIf(s -> s.windowId().equals(windowId));
+        // Update our state list (must be on FX thread since it backs a UI list)
+        Platform.runLater(() -> dialogStates.removeIf(s -> windowId.equals(s.windowId())));
 
         logger.info("Reset dialog position to default: {}", windowId);
     }
@@ -250,8 +253,9 @@ public final class DialogPositionManager {
      * @return true if the window was found and brought to front
      */
     public boolean bringToFront(String windowId) {
+        if (windowId == null) return false;
         for (var entry : trackedWindows.entrySet()) {
-            if (getWindowId(entry.getKey()).equals(windowId)) {
+            if (windowId.equals(getWindowId(entry.getKey()))) {
                 Window window = entry.getKey();
                 Platform.runLater(() -> {
                     if (window instanceof Stage stage) {
@@ -652,7 +656,8 @@ public final class DialogPositionManager {
 
     private DialogState createStateFromWindow(Window window) {
         String windowId = getWindowId(window);
-        String title = (window instanceof Stage stage) ? stage.getTitle() : windowId;
+        String title = (window instanceof Stage stage && stage.getTitle() != null)
+                ? stage.getTitle() : windowId;
         Modality modality = (window instanceof Stage stage) ? stage.getModality() : Modality.NONE;
 
         // Determine which screen the window is primarily on and get its scale factors

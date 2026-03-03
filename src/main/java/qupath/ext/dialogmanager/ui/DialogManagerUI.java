@@ -167,7 +167,7 @@ public class DialogManagerUI {
         SortedList<DialogState> sortedList = new SortedList<>(
                 manager.getDialogStates(),
                 Comparator.comparing(DialogState::isCurrentlyOpen).reversed()
-                        .thenComparing(DialogState::title, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(DialogState::title, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
         );
         listView.setItems(sortedList);
 
@@ -325,8 +325,9 @@ public class DialogManagerUI {
                 sb.append("[OPEN] ");
             }
 
-            // Title
-            sb.append(state.title());
+            // Title (fall back to windowId if title is empty)
+            String displayTitle = state.title().isEmpty() ? state.windowId() : state.title();
+            sb.append(displayTitle.isEmpty() ? "(untitled)" : displayTitle);
 
             // Position info
             if (state.hasValidPosition()) {
@@ -366,8 +367,8 @@ public class DialogManagerUI {
 
         private Tooltip createDetailTooltip(DialogState state) {
             StringBuilder sb = new StringBuilder();
-            sb.append("Window ID: ").append(state.windowId()).append("\n");
-            sb.append("Title: ").append(state.title()).append("\n");
+            sb.append("Window ID: ").append(state.windowId().isEmpty() ? "(none)" : state.windowId()).append("\n");
+            sb.append("Title: ").append(state.title().isEmpty() ? "(untitled)" : state.title()).append("\n");
             sb.append("Position: (").append(String.format("%.0f", state.x()))
                     .append(", ").append(String.format("%.0f", state.y())).append(")\n");
             sb.append("Size: ").append(String.format("%.0f", state.width()))

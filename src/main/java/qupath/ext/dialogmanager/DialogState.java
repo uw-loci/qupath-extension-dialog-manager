@@ -41,6 +41,27 @@ public record DialogState(
 ) {
 
     /**
+     * Compact constructor that normalizes inputs to prevent downstream NPEs and invalid values.
+     * <ul>
+     *   <li>Null windowId/title default to empty string</li>
+     *   <li>Null modality defaults to NONE</li>
+     *   <li>NaN/Infinity coordinates default to 0</li>
+     *   <li>Invalid scale factors default to 1.0</li>
+     * </ul>
+     */
+    public DialogState {
+        if (windowId == null) windowId = "";
+        if (title == null) title = windowId;
+        if (modality == null) modality = Modality.NONE;
+        if (!Double.isFinite(x)) x = 0;
+        if (!Double.isFinite(y)) y = 0;
+        if (!Double.isFinite(width) || width < 0) width = 0;
+        if (!Double.isFinite(height) || height < 0) height = 0;
+        if (!Double.isFinite(savedScaleX) || savedScaleX <= 0) savedScaleX = 1.0;
+        if (!Double.isFinite(savedScaleY) || savedScaleY <= 0) savedScaleY = 1.0;
+    }
+
+    /**
      * Create a DialogState with default values for optional fields.
      */
     public DialogState(String windowId, String title, double x, double y, double width, double height) {
