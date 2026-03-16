@@ -164,4 +164,8 @@ The extension JAR will be in `build/libs/`.
 
 ## License
 
-This extension is provided under the same license as QuPath.
+Apache License 2.0 - see [LICENSE](LICENSE) for details.
+
+## AI-Assisted Development
+
+This project was developed with assistance from [Claude](https://claude.ai) (Anthropic). Claude was used as a development tool for code generation, architecture design, debugging, and documentation throughout the project.
