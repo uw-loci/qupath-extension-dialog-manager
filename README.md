@@ -164,7 +164,7 @@ The extension JAR will be in `build/libs/`.
 
 ## License
 
-Apache License 2.0 - see [LICENSE](LICENSE) for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
 ## AI-Assisted Development
 
