@@ -49,6 +49,7 @@ public class DialogManagerUI {
     private static final Logger logger = LoggerFactory.getLogger(DialogManagerUI.class);
 
     private static Stage stage;
+    private Label mainWindowStatus;
     private static DialogManagerUI instance;
 
     private final DialogPositionManager manager;
@@ -131,10 +132,59 @@ public class DialogManagerUI {
             manager.setVerboseLogging(verboseLogCheckbox.isSelected());
         });
 
+        // --- Main Window Position ---
+        Label mainWindowLabel = new Label("QuPath Main Window");
+        mainWindowLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold;");
+
+        Button saveWindowBtn = new Button("Save Current Position");
+        saveWindowBtn.setTooltip(new Tooltip(
+                "Save the current QuPath window position and size.\n"
+                        + "Also records the screen configuration so position\n"
+                        + "is only restored if monitors haven't changed."));
+        saveWindowBtn.setOnAction(e -> {
+            manager.saveMainWindowPosition();
+            mainWindowStatus.setText("Position saved. Will restore on next startup.");
+            mainWindowStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: green;");
+        });
+
+        CheckBox restoreCheckbox = new CheckBox("Restore on startup");
+        restoreCheckbox.setSelected(DialogPositionPreferences.isMainWindowRestoreEnabled());
+        restoreCheckbox.setTooltip(new Tooltip(
+                "When checked, QuPath will restore the saved window position\n"
+                        + "on startup -- but ONLY if the screen configuration is\n"
+                        + "identical (same monitors, resolution, arrangement).\n\n"
+                        + "Automatically unchecked if monitors change."));
+        restoreCheckbox.setOnAction(e -> {
+            DialogPositionPreferences.setMainWindowRestoreEnabled(restoreCheckbox.isSelected());
+            if (!restoreCheckbox.isSelected()) {
+                mainWindowStatus.setText("Restore disabled.");
+                mainWindowStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #666;");
+            }
+        });
+
+        mainWindowStatus = new Label();
+        mainWindowStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #666;");
+        mainWindowStatus.setWrapText(true);
+
+        // Show current status
+        if (DialogPositionPreferences.isMainWindowRestoreEnabled()) {
+            var saved = DialogPositionPreferences.loadMainWindowState();
+            if (saved != null) {
+                mainWindowStatus.setText(String.format("Saved: %dx%d at (%d, %d)",
+                        saved.get("w").getAsInt(), saved.get("h").getAsInt(),
+                        saved.get("x").getAsInt(), saved.get("y").getAsInt()));
+            }
+        }
+
+        HBox mainWindowBtnBox = new HBox(8, saveWindowBtn, restoreCheckbox);
+        mainWindowBtnBox.setAlignment(Pos.CENTER_LEFT);
+
         // Screen info
         Label screenInfo = createScreenInfoLabel();
 
-        topBox.getChildren().addAll(descLabel, trackAllCheckbox, verboseLogCheckbox, new Separator(), screenInfo);
+        topBox.getChildren().addAll(descLabel, trackAllCheckbox, verboseLogCheckbox,
+                new Separator(), mainWindowLabel, mainWindowBtnBox, mainWindowStatus,
+                new Separator(), screenInfo);
         return topBox;
     }
 

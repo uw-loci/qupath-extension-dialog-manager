@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.stage.Modality;
 import org.slf4j.Logger;
@@ -27,6 +28,8 @@ public final class DialogPositionPreferences {
     private static final Logger logger = LoggerFactory.getLogger(DialogPositionPreferences.class);
 
     private static final String PREF_KEY = "dialogManager.positions";
+    private static final String MAIN_WINDOW_KEY = "dialogManager.mainWindow";
+    private static final String MAIN_WINDOW_ENABLED_KEY = "dialogManager.mainWindow.enabled";
 
     // Note: No pretty printing to stay within Java Preferences 8192 char limit
     private static final Gson GSON = new GsonBuilder().create();
@@ -41,6 +44,10 @@ public final class DialogPositionPreferences {
 
     // Property for the raw JSON string storage
     private static ObjectProperty<String> positionsJsonProperty;
+
+    // Main window position + screen fingerprint (separate from dialog positions)
+    private static ObjectProperty<String> mainWindowJsonProperty;
+    private static BooleanProperty mainWindowEnabledProperty;
 
     private DialogPositionPreferences() {
         // Utility class - no instantiation
@@ -60,6 +67,14 @@ public final class DialogPositionPreferences {
                     s -> s,
                     s -> s
             );
+            mainWindowJsonProperty = PathPrefs.createPersistentPreference(
+                    MAIN_WINDOW_KEY,
+                    "",
+                    s -> s,
+                    s -> s
+            );
+            mainWindowEnabledProperty = PathPrefs.createPersistentPreference(
+                    MAIN_WINDOW_ENABLED_KEY, false);
             logger.debug("DialogPositionPreferences initialized");
 
             // Automatically clean up any garbage fallback entries from previous sessions
@@ -323,5 +338,77 @@ public final class DialogPositionPreferences {
         if (obj.has(key)) return obj.get(key).getAsString();
         if (altKey != null && obj.has(altKey)) return obj.get(altKey).getAsString();
         return defaultVal;
+    }
+
+    // --- Main Window Position ---
+
+    /**
+     * Whether the user has opted in to restoring the main QuPath window position.
+     */
+    public static boolean isMainWindowRestoreEnabled() {
+        initialize();
+        return mainWindowEnabledProperty.get();
+    }
+
+    /**
+     * Set whether to restore the main window position on startup.
+     */
+    public static void setMainWindowRestoreEnabled(boolean enabled) {
+        initialize();
+        mainWindowEnabledProperty.set(enabled);
+        logger.info("Main window restore enabled: {}", enabled);
+    }
+
+    /**
+     * Save the main window position and current screen fingerprint.
+     *
+     * @param x window X position
+     * @param y window Y position
+     * @param width window width
+     * @param height window height
+     * @param screenFingerprint a string describing all monitors (count, bounds, scales)
+     */
+    public static void saveMainWindowState(double x, double y, double width, double height,
+                                           String screenFingerprint) {
+        initialize();
+        JsonObject obj = new JsonObject();
+        obj.addProperty("x", (int) Math.round(x));
+        obj.addProperty("y", (int) Math.round(y));
+        obj.addProperty("w", (int) Math.round(width));
+        obj.addProperty("h", (int) Math.round(height));
+        obj.addProperty("fp", screenFingerprint);
+        mainWindowJsonProperty.set(GSON.toJson(obj));
+        setMainWindowRestoreEnabled(true);
+        logger.info("Saved main window state: {}x{} at ({}, {}), fingerprint={}",
+                (int) width, (int) height, (int) x, (int) y, screenFingerprint);
+    }
+
+    /**
+     * Load the saved main window state.
+     *
+     * @return JsonObject with x, y, w, h, fp keys, or null if nothing saved
+     */
+    public static JsonObject loadMainWindowState() {
+        initialize();
+        String json = mainWindowJsonProperty.get();
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            return JsonParser.parseString(json).getAsJsonObject();
+        } catch (Exception e) {
+            logger.warn("Failed to parse saved main window state: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Clear saved main window state and disable restore.
+     */
+    public static void clearMainWindowState() {
+        initialize();
+        mainWindowJsonProperty.set("");
+        setMainWindowRestoreEnabled(false);
+        logger.info("Cleared main window saved state");
     }
 }

@@ -801,4 +801,114 @@ public final class DialogPositionManager {
             }
         }
     }
+
+    // ==================== Main Window Position ====================
+
+    /**
+     * Compute a fingerprint of the current screen configuration.
+     * Includes count, bounds, and scale for every monitor. Any change
+     * (monitor added/removed, resolution changed, rearranged) produces
+     * a different fingerprint.
+     */
+    public static String computeScreenFingerprint() {
+        List<Screen> screens = Screen.getScreens();
+        StringBuilder sb = new StringBuilder();
+        sb.append(screens.size()).append(":");
+        for (Screen s : screens) {
+            Rectangle2D b = s.getBounds();
+            sb.append(String.format("%.0fx%.0f@%.0f,%.0f/%.2fx%.2f;",
+                    b.getWidth(), b.getHeight(), b.getMinX(), b.getMinY(),
+                    s.getOutputScaleX(), s.getOutputScaleY()));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Save the current main QuPath window position and screen fingerprint.
+     * Called explicitly by the user from the Dialog Manager UI.
+     */
+    public void saveMainWindowPosition() {
+        if (mainStage == null) {
+            logger.warn("Cannot save main window position: no main stage reference");
+            return;
+        }
+        String fingerprint = computeScreenFingerprint();
+        DialogPositionPreferences.saveMainWindowState(
+                mainStage.getX(), mainStage.getY(),
+                mainStage.getWidth(), mainStage.getHeight(),
+                fingerprint);
+    }
+
+    /**
+     * Attempt to restore the main QuPath window position from saved state.
+     * <p>
+     * Safety checks (any failure skips restore and disables the preference):
+     * <ol>
+     *   <li>Preference must be explicitly enabled</li>
+     *   <li>Saved state must exist with valid position and size</li>
+     *   <li>Screen fingerprint must match exactly</li>
+     *   <li>Saved position must be sufficiently visible on current screens</li>
+     * </ol>
+     *
+     * @return true if position was restored, false if skipped for any reason
+     */
+    public boolean restoreMainWindowPosition() {
+        if (mainStage == null) {
+            logger.debug("Cannot restore main window: no main stage reference");
+            return false;
+        }
+
+        // Check 1: opt-in preference
+        if (!DialogPositionPreferences.isMainWindowRestoreEnabled()) {
+            logger.debug("Main window restore not enabled");
+            return false;
+        }
+
+        // Check 2: saved state exists
+        com.google.gson.JsonObject saved = DialogPositionPreferences.loadMainWindowState();
+        if (saved == null) {
+            logger.info("Main window restore enabled but no saved state found -- disabling");
+            DialogPositionPreferences.setMainWindowRestoreEnabled(false);
+            return false;
+        }
+
+        int x = saved.has("x") ? saved.get("x").getAsInt() : 0;
+        int y = saved.has("y") ? saved.get("y").getAsInt() : 0;
+        int w = saved.has("w") ? saved.get("w").getAsInt() : 0;
+        int h = saved.has("h") ? saved.get("h").getAsInt() : 0;
+        String savedFingerprint = saved.has("fp") ? saved.get("fp").getAsString() : "";
+
+        if (w <= 0 || h <= 0) {
+            logger.info("Main window saved state has invalid size ({}x{}) -- disabling", w, h);
+            DialogPositionPreferences.setMainWindowRestoreEnabled(false);
+            return false;
+        }
+
+        // Check 3: screen fingerprint must match exactly
+        String currentFingerprint = computeScreenFingerprint();
+        if (!currentFingerprint.equals(savedFingerprint)) {
+            logger.info("Screen configuration changed since main window position was saved -- disabling restore");
+            logger.info("  Saved:   {}", savedFingerprint);
+            logger.info("  Current: {}", currentFingerprint);
+            DialogPositionPreferences.setMainWindowRestoreEnabled(false);
+            return false;
+        }
+
+        // Check 4: position must be visible on current screens
+        if (!isPositionSufficientlyVisible(x, y, w, h)) {
+            logger.info("Main window saved position ({},{} {}x{}) is not sufficiently visible -- disabling",
+                    x, y, w, h);
+            DialogPositionPreferences.setMainWindowRestoreEnabled(false);
+            return false;
+        }
+
+        // All checks passed -- apply
+        mainStage.setX(x);
+        mainStage.setY(y);
+        mainStage.setWidth(w);
+        mainStage.setHeight(h);
+        logger.info("Restored main window position: ({}, {}) {}x{}", x, y, w, h);
+        return true;
+    }
+
 }

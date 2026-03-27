@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qupath.ext.dialogmanager.ui.DialogManagerUI;
@@ -72,6 +73,23 @@ public class DialogManagerExtension implements QuPathExtension {
         // Add some default targeted dialogs for testing
         // These are common QuPath dialogs we want to track
         addDefaultTargetedDialogs(manager);
+
+        // Attempt to restore main window position after the stage is shown.
+        // Must wait until the stage is visible so QuPath's own positioning is done first.
+        Stage mainStage = qupath.getStage();
+        if (mainStage != null) {
+            mainStage.showingProperty().addListener((obs, wasShowing, isShowing) -> {
+                if (isShowing) {
+                    // Run after QuPath finishes its own layout
+                    Platform.runLater(() -> {
+                        boolean restored = manager.restoreMainWindowPosition();
+                        if (restored) {
+                            logger.info("Main QuPath window position restored from saved state");
+                        }
+                    });
+                }
+            });
+        }
 
         // Add menu items
         Platform.runLater(() -> addMenuItems(qupath));
