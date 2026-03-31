@@ -854,13 +854,13 @@ public final class DialogPositionManager {
      */
     public boolean restoreMainWindowPosition() {
         if (mainStage == null) {
-            logger.debug("Cannot restore main window: no main stage reference");
+            logger.info("Cannot restore main window: no main stage reference");
             return false;
         }
 
         // Check 1: opt-in preference
         if (!DialogPositionPreferences.isMainWindowRestoreEnabled()) {
-            logger.debug("Main window restore not enabled");
+            logger.info("Main window restore not enabled (opt-in preference is off)");
             return false;
         }
 

@@ -74,21 +74,32 @@ public class DialogManagerExtension implements QuPathExtension {
         // These are common QuPath dialogs we want to track
         addDefaultTargetedDialogs(manager);
 
-        // Attempt to restore main window position after the stage is shown.
-        // Must wait until the stage is visible so QuPath's own positioning is done first.
+        // Attempt to restore main window position.
+        // Use Platform.runLater so QuPath's own layout/positioning completes first.
         Stage mainStage = qupath.getStage();
         if (mainStage != null) {
-            mainStage.showingProperty().addListener((obs, wasShowing, isShowing) -> {
-                if (isShowing) {
-                    // Run after QuPath finishes its own layout
-                    Platform.runLater(() -> {
-                        boolean restored = manager.restoreMainWindowPosition();
-                        if (restored) {
-                            logger.info("Main QuPath window position restored from saved state");
-                        }
-                    });
-                }
-            });
+            if (mainStage.isShowing()) {
+                // Stage is already visible (common in QuPath 0.7+, which loads
+                // extensions after the main window is shown).
+                Platform.runLater(() -> {
+                    boolean restored = manager.restoreMainWindowPosition();
+                    if (restored) {
+                        logger.info("Main QuPath window position restored from saved state");
+                    }
+                });
+            } else {
+                // Stage not yet visible -- wait for it
+                mainStage.showingProperty().addListener((obs, wasShowing, isShowing) -> {
+                    if (isShowing) {
+                        Platform.runLater(() -> {
+                            boolean restored = manager.restoreMainWindowPosition();
+                            if (restored) {
+                                logger.info("Main QuPath window position restored from saved state");
+                            }
+                        });
+                    }
+                });
+            }
         }
 
         // Add menu items
