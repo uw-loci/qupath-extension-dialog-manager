@@ -172,6 +172,16 @@ public class DialogManagerExtension implements QuPathExtension {
         // its own entry and the saved position would not survive a modality
         // switch.
         manager.addTitlePrefixAlias("Live Viewer");
+        // Same problem in other extensions: the title carries an image name,
+        // project name, classifier/session, downsample or an unsaved-changes
+        // " *" marker, so each variant would otherwise get its own entry.
+        manager.addTitlePrefixAlias("Run Cellpose Detection");
+        manager.addTitlePrefixAlias("Project Metadata Browser");
+        manager.addTitlePrefixAlias("Training Area Issues");
+        manager.addTitlePrefixAlias("Resolution Preview");
+        manager.addTitlePrefixAlias("Context Preview");
+        manager.addTitlePrefixAlias("OCR for Labels - Configure Fields");
+        manager.addTitlePrefixAlias("QPCAT - Sub-cluster");
 
         logger.debug("Added {} default targeted dialogs", 11);
     }
