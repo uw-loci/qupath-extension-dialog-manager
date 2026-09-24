@@ -289,6 +289,13 @@ public final class DialogPositionManager {
     }
 
     /**
+     * Check whether all windows are tracked (true) or only targeted ones (false).
+     */
+    public boolean isTrackAllWindows() {
+        return trackAllWindows;
+    }
+
+    /**
      * Set whether to track all windows or only targeted ones.
      */
     public void setTrackAllWindows(boolean trackAll) {

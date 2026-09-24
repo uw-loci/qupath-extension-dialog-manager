@@ -123,6 +123,7 @@ public class DialogManagerUI {
 
         // Track all windows checkbox
         CheckBox trackAllCheckbox = new CheckBox("Track all dialogs (not just targeted ones)");
+        trackAllCheckbox.setSelected(manager.isTrackAllWindows());
         trackAllCheckbox.setTooltip(new Tooltip(
                 "When enabled, all dialog windows will have their positions saved.\n" +
                 "When disabled, only specifically targeted dialogs are tracked."));
@@ -132,6 +133,7 @@ public class DialogManagerUI {
 
         // Verbose logging checkbox
         CheckBox verboseLogCheckbox = new CheckBox("Verbose logging");
+        verboseLogCheckbox.setSelected(manager.isVerboseLogging());
         verboseLogCheckbox.setTooltip(new Tooltip(
                 "Log detailed tracking and position restore messages.\n" +
                 "Useful for debugging. Off by default to reduce log noise."));
