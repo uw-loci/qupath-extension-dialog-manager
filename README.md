@@ -71,7 +71,7 @@ Dialogs whose titles change based on context (e.g., titles that include the curr
 
 ### Dialogs That Force Centering
 
-Some dialogs are programmed to center themselves on their parent window every time they open. The extension attempts to override this by re-applying the saved position after the dialog shows, but some dialogs may resist.
+Some dialogs place themselves every time they open: they center on their parent window, or dock beside another window (QPSC docks its multi-slide dialogs beside the batch progress panel). The extension re-applies the saved position after the dialog's own placement code runs when it opens, so these dialogs return to where you left them. A dialog that moves itself later than that, for example on a timer, can still override it.
 
 ### First-Time Dialogs
 
@@ -200,7 +200,7 @@ When a tracked dialog opens:
 1. The extension checks for a saved position matching the dialog's title
 2. If found, validates that the position is visible on a connected monitor
 3. Sets the position BEFORE the dialog becomes visible (to prevent flicker)
-4. Re-applies the position AFTER the dialog shows (in case QuPath overrides it)
+4. Re-applies the position AFTER the dialog shows, once its own on-shown handlers have run, so a dialog that positions itself when it opens does not override the saved position
 5. If the saved position is off-screen, centers the dialog on the best available monitor
 
 ## Building from Source

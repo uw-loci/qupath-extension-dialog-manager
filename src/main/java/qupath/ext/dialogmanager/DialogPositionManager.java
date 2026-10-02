@@ -565,10 +565,15 @@ public final class DialogPositionManager {
         }
 
         if (window.isShowing()) {
-            // Window already showing - restore position now (may cause brief jump)
+            // Window already showing - restore position now (may cause brief jump).
+            // A window joins Window.getWindows() from inside show(), BEFORE its own
+            // WINDOW_SHOWN handlers run, so a dialog that places itself from setOnShown
+            // (QPSC docks its dialogs beside a batch panel) would override this restore.
+            // Re-apply once those handlers have run.
             if (savedState != null) {
                 logVerbose("Restoring position for '{}' (window already showing)", windowId);
                 restoreWindowPositionWithValidation(window, savedState);
+                reapplyAfterShowHandlers(window, savedState);
             }
             startTracking(window);
         } else {
@@ -597,6 +602,25 @@ public final class DialogPositionManager {
                 }
             });
         }
+    }
+
+    /**
+     * Re-apply a saved position after the window's own show handlers, and once more a
+     * pulse later for handlers that defer their placement with a single runLater.
+     */
+    private void reapplyAfterShowHandlers(Window window, DialogState savedState) {
+        Platform.runLater(() -> {
+            if (!window.isShowing()) {
+                return;
+            }
+            restoreWindowPositionWithValidation(window, savedState);
+            Platform.runLater(() -> {
+                if (window.isShowing()) {
+                    restoreWindowPositionWithValidation(window, savedState);
+                    logVerbose("Re-applied saved position for '{}' after show", savedState.windowId());
+                }
+            });
+        });
     }
 
     private void onWindowRemoved(Window window) {
