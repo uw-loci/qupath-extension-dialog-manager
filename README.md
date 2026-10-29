@@ -67,7 +67,9 @@ Dialogs that block the UI (like Cell Detection, other analysis dialogs) have str
 
 ### Dialogs with Dynamic Titles
 
-Dialogs whose titles change based on context (e.g., titles that include the current image name or file path) won't be recognized between sessions because the title is used as the identifier. Each unique title is treated as a separate dialog.
+Dialogs whose titles change based on context (e.g., titles that include the current image name or file path) won't be recognized between sessions because the title is used as the identifier. Each unique title is treated as a separate dialog. A version number at the end of a title
+(`QPCAT - Run Clustering  v. 0.23.3`, `Tool v1.2.0`) is ignored, so a dialog keeps its
+position when the extension that opens it is upgraded.
 
 ### Dialogs That Force Centering
 

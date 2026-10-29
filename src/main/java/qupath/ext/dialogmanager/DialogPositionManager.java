@@ -204,6 +204,7 @@ public final class DialogPositionManager {
      * several prefixes match (overlapping families) the longest one wins.
      */
     private String canonicalizeTitle(String title) {
+        title = stripVersionSuffix(title);
         if (title == null || titlePrefixAliases.isEmpty()) {
             return title;
         }
@@ -214,6 +215,20 @@ public final class DialogPositionManager {
             }
         }
         return best != null ? best : title;
+    }
+
+    private static final java.util.regex.Pattern VERSION_SUFFIX =
+            java.util.regex.Pattern.compile("\\s+v\\.?\\s?\\d+(\\.\\d+)+([-+][0-9A-Za-z.]+)?$");
+
+    /**
+     * Drop a trailing version ({@code "  v. 0.23.3"}, {@code " v1.2.0"}) so a window
+     * keeps its saved position when the extension that titles it is upgraded.
+     *
+     * @param title the window title, or null
+     * @return the title without a trailing version
+     */
+    static String stripVersionSuffix(String title) {
+        return title == null ? null : VERSION_SUFFIX.matcher(title).replaceFirst("");
     }
 
     private static boolean matchesPrefix(String title, String prefix) {
