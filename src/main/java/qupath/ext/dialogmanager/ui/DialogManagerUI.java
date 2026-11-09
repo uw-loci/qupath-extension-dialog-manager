@@ -56,6 +56,7 @@ public class DialogManagerUI {
 
     private static Stage stage;
     private Label mainWindowStatus;
+    private CheckBox restoreCheckbox;
     private TextField storageFileField;
     private static DialogManagerUI instance;
 
@@ -75,6 +76,8 @@ public class DialogManagerUI {
         if (stage == null) {
             instance = new DialogManagerUI();
             stage = instance.createStage(owner);
+        } else {
+            instance.refreshMainWindowState();
         }
 
         if (!stage.isShowing()) {
@@ -82,6 +85,21 @@ public class DialogManagerUI {
         }
         stage.toFront();
         stage.requestFocus();
+    }
+
+    /**
+     * Show the saved main window state: the restore box and the saved size and position.
+     * Called on every show and after a save, because the window is reused and startup can
+     * switch restore off when the screens changed.
+     */
+    private void refreshMainWindowState() {
+        boolean enabled = DialogPositionPreferences.isMainWindowRestoreEnabled();
+        restoreCheckbox.setSelected(enabled);
+        mainWindowStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #666;");
+        var saved = enabled ? DialogPositionPreferences.loadMainWindowState() : null;
+        mainWindowStatus.setText(saved == null ? "" : String.format("Saved: %dx%d at (%d, %d)",
+                saved.get("w").getAsInt(), saved.get("h").getAsInt(),
+                saved.get("x").getAsInt(), saved.get("y").getAsInt()));
     }
 
     private Stage createStage(Stage owner) {
@@ -152,12 +170,13 @@ public class DialogManagerUI {
                         + "is only restored if monitors haven't changed."));
         saveWindowBtn.setOnAction(e -> {
             manager.saveMainWindowPosition();
-            mainWindowStatus.setText("Position saved. Will restore on next startup.");
-            mainWindowStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: green;");
+            refreshMainWindowState();
+            if (!DialogPositionPreferences.isMainWindowRestoreEnabled()) {
+                mainWindowStatus.setText("Position not saved; see the log.");
+            }
         });
 
-        CheckBox restoreCheckbox = new CheckBox("Restore on startup");
-        restoreCheckbox.setSelected(DialogPositionPreferences.isMainWindowRestoreEnabled());
+        restoreCheckbox = new CheckBox("Restore on startup");
         restoreCheckbox.setTooltip(new Tooltip(
                 "When checked, QuPath will restore the saved window position\n"
                         + "on startup -- but ONLY if the screen configuration is\n"
@@ -175,15 +194,7 @@ public class DialogManagerUI {
         mainWindowStatus.setStyle("-fx-font-size: 10px; -fx-text-fill: #666;");
         mainWindowStatus.setWrapText(true);
 
-        // Show current status
-        if (DialogPositionPreferences.isMainWindowRestoreEnabled()) {
-            var saved = DialogPositionPreferences.loadMainWindowState();
-            if (saved != null) {
-                mainWindowStatus.setText(String.format("Saved: %dx%d at (%d, %d)",
-                        saved.get("w").getAsInt(), saved.get("h").getAsInt(),
-                        saved.get("x").getAsInt(), saved.get("y").getAsInt()));
-            }
-        }
+        refreshMainWindowState();
 
         HBox mainWindowBtnBox = new HBox(8, saveWindowBtn, restoreCheckbox);
         mainWindowBtnBox.setAlignment(Pos.CENTER_LEFT);
