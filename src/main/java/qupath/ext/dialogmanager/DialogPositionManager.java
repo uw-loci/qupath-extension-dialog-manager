@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -992,11 +993,20 @@ public final class DialogPositionManager {
         sb.append(screens.size()).append(":");
         for (Screen s : screens) {
             Rectangle2D b = s.getBounds();
-            sb.append(String.format("%.0fx%.0f@%.0f,%.0f/%.2fx%.2f;",
-                    b.getWidth(), b.getHeight(), b.getMinX(), b.getMinY(),
+            sb.append(screenFingerprintPart(b.getWidth(), b.getHeight(), b.getMinX(), b.getMinY(),
                     s.getOutputScaleX(), s.getOutputScaleY()));
         }
         return sb.toString();
+    }
+
+    /**
+     * One monitor's part of the screen fingerprint. Locale.ROOT, so the saved
+     * fingerprint does not change with QuPath's "Dates &amp; numbers" setting.
+     */
+    static String screenFingerprintPart(double width, double height, double minX, double minY,
+                                        double scaleX, double scaleY) {
+        return String.format(Locale.ROOT, "%.0fx%.0f@%.0f,%.0f/%.2fx%.2f;",
+                width, height, minX, minY, scaleX, scaleY);
     }
 
     /**
